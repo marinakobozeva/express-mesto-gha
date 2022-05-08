@@ -1,0 +1,9 @@
+const BAD_REQUEST_ERROR = 400;
+const NOT_FOUND_ERROR = 404;
+const UNEXPECTED_ERROR = 500;
+
+module.exports = {
+  BAD_REQUEST_ERROR,
+  NOT_FOUND_ERROR,
+  UNEXPECTED_ERROR,
+};
