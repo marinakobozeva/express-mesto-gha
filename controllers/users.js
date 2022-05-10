@@ -37,14 +37,18 @@ module.exports.getUser = (req, res) => {
       }
     })
     .catch((err) => {
-      res.status(UNEXPECTED_ERROR).send({ message: err.message });
+      if (err.name === 'CastError') {
+        res.status(BAD_REQUEST_ERROR).send({ message: 'Передан некорректный формат id' });
+      } else {
+        res.status(UNEXPECTED_ERROR).send({ message: err.message });
+      }
     });
 };
 
 module.exports.updateUser = (req, res) => {
   const { name, about } = req.body;
   const userId = req.user._id;
-  User.findByIdAndUpdate(userId, { name, about }, { new: true })
+  User.findOneAndUpdate({ _id: userId }, { name, about }, { new: true, runValidators: true })
     .then((user) => {
       if (user === null) {
         res.status(NOT_FOUND_ERROR).send({ message: `Пользователь по указанному _id (${userId}) не найден` });

@@ -38,7 +38,11 @@ module.exports.deleteCard = (req, res) => {
       }
     })
     .catch((err) => {
-      res.status(500).send({ message: err.message });
+      if (err.name === 'CastError') {
+        res.status(BAD_REQUEST_ERROR).send({ message: 'Передан некорректный формат id' });
+      } else {
+        res.status(UNEXPECTED_ERROR).send({ message: err.message });
+      }
     });
 };
 
@@ -56,7 +60,9 @@ module.exports.likeCard = (req, res) => {
       }
     })
     .catch((err) => {
-      if (err.name === 'ValidationError') {
+      if (err.name === 'CastError') {
+        res.status(BAD_REQUEST_ERROR).send({ message: 'Передан некорректный формат id' });
+      } else if (err.name === 'ValidationError') {
         res.status(BAD_REQUEST_ERROR).send({ message: 'Переданы некорректные данные для постановки лайка' });
       } else {
         res.status(UNEXPECTED_ERROR).send({ message: err.message });
@@ -78,7 +84,9 @@ module.exports.dislikeCard = (req, res) => {
       }
     })
     .catch((err) => {
-      if (err.name === 'ValidationError') {
+      if (err.name === 'CastError') {
+        res.status(BAD_REQUEST_ERROR).send({ message: 'Передан некорректный формат id' });
+      } else if (err.name === 'ValidationError') {
         res.status(BAD_REQUEST_ERROR).send({ message: 'Переданы некорректные данные для снятия лайка' });
       } else {
         res.status(UNEXPECTED_ERROR).send({ message: err.message });
