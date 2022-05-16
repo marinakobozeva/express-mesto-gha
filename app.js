@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const { login, createUser } = require('./controllers/users');
 
 const app = express();
 const { PORT = 3000 } = process.env;
@@ -33,3 +34,6 @@ app.use((req, res, next) => {
   res.status(404).send({ message: 'Указанный маршрут не найден' });
   next();
 });
+
+app.post('/signin', login);
+app.post('/signup', createUser);
