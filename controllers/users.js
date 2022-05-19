@@ -4,6 +4,7 @@ const User = require('../models/user');
 const {
   BadRequestError,
   NotFoundError,
+  ConflictError,
 } = require('../utils/errors');
 const { SECRET_KEY } = require('../utils/constants');
 
@@ -38,6 +39,8 @@ module.exports.createUser = (req, res, next) => {
       let prettyErr = err;
       if (err.name === 'ValidationError') {
         prettyErr = new BadRequestError('Переданы некорректные данные при создании пользователя');
+      } else if (err.code === 11000) {
+        prettyErr = new ConflictError('При регистрации указан email, который уже существует на сервере');
       }
       next(prettyErr);
     });
