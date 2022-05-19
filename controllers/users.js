@@ -5,13 +5,7 @@ const {
   BadRequestError,
   NotFoundError,
 } = require('../utils/errors');
-const {
-  UNEXPECTED_ERROR,
-  UNAUTHORIZED_ERROR,
-  NOT_FOUND_ERROR,
-  BAD_REQUEST_ERROR,
-  SECRET_KEY,
-} = require('../utils/constants');
+const { SECRET_KEY, UNEXPECTED_ERROR } = require('../utils/constants');
 
 module.exports.getUsers = (req, res) => {
   User.find({})
@@ -70,43 +64,43 @@ module.exports.getUser = (req, res, next) => {
     });
 };
 
-module.exports.updateUser = (req, res) => {
+module.exports.updateUser = (req, res, next) => {
   const { name, about } = req.body;
   const userId = req.user._id;
   User.findOneAndUpdate({ _id: userId }, { name, about }, { new: true, runValidators: true })
     .then((user) => {
       if (user === null) {
-        res.status(NOT_FOUND_ERROR).send({ message: `Пользователь по указанному _id (${userId}) не найден` });
+        throw new NotFoundError(`Пользователь по указанному _id (${userId}) не найден`);
       } else {
         res.send(user);
       }
     })
     .catch((err) => {
+      let prettyErr = err;
       if (err.name === 'ValidationError') {
-        res.status(BAD_REQUEST_ERROR).send({ message: 'Переданы некорректные данные при обновлении пользователя' });
-      } else {
-        res.status(UNEXPECTED_ERROR).send({ message: err.message });
+        prettyErr = new BadRequestError('Переданы некорректные данные при обновлении пользователя');
       }
+      next(prettyErr);
     });
 };
 
-module.exports.updateAvatar = (req, res) => {
+module.exports.updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
   const userId = req.user._id;
   User.findByIdAndUpdate(userId, { avatar }, { new: true })
     .then((user) => {
       if (user === null) {
-        res.status(NOT_FOUND_ERROR).send({ message: `Пользователь по указанному _id (${userId}) не найден` });
+        throw new NotFoundError(`Пользователь по указанному _id (${userId}) не найден`);
       } else {
         res.send(user);
       }
     })
     .catch((err) => {
+      let prettyErr = err;
       if (err.name === 'ValidationError') {
-        res.status(BAD_REQUEST_ERROR).send({ message: 'Переданы некорректные данные при обновлении аватара' });
-      } else {
-        res.status(UNEXPECTED_ERROR).send({ message: err.message });
+        prettyErr = new BadRequestError('Переданы некорректные данные при обновлении аватара');
       }
+      next(prettyErr);
     });
 };
 
@@ -122,26 +116,25 @@ module.exports.login = (req, res) => {
       res.send({ token });
     })
     .catch((err) => {
-      res.status(UNAUTHORIZED_ERROR).send({ message: err.message });
+      res.status(UNEXPECTED_ERROR).send({ message: err.message });
     });
 };
 
-module.exports.getUserInfo = (req, res) => {
+module.exports.getUserInfo = (req, res, next) => {
   const { _id } = req.user;
-  console.log(_id);
   User.findById(_id)
     .then((user) => {
       if (user === null) {
-        res.status(NOT_FOUND_ERROR).send({ message: `Пользователь по указанному _id (${_id}) не найден` });
+        throw new NotFoundError(`Пользователь по указанному _id (${_id}) не найден`);
       } else {
         res.send(user);
       }
     })
     .catch((err) => {
+      let prettyErr = err;
       if (err.name === 'CastError') {
-        res.status(BAD_REQUEST_ERROR).send({ message: 'Передан некорректный формат id' });
-      } else {
-        res.status(UNEXPECTED_ERROR).send({ message: err.message });
+        prettyErr = new BadRequestError('Передан некорректный формат id');
       }
+      next(prettyErr);
     });
 };
