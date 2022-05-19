@@ -1,10 +1,10 @@
 const Card = require('../models/card');
 const {
-  UNEXPECTED_ERROR,
-  FOBIDDEN_ERROR,
-  NOT_FOUND_ERROR,
-  BAD_REQUEST_ERROR,
-} = require('../utils/constants');
+  BadRequestError,
+  ForbiddenError,
+  NotFoundError,
+} = require('../utils/errors');
+const { UNEXPECTED_ERROR } = require('../utils/constants');
 
 module.exports.getCards = (req, res) => {
   Card.find({})
@@ -16,7 +16,7 @@ module.exports.getCards = (req, res) => {
     });
 };
 
-module.exports.createCard = (req, res) => {
+module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
   const ownerId = req.user._id;
   Card.create({ name, link, owner: ownerId })
@@ -24,37 +24,37 @@ module.exports.createCard = (req, res) => {
       res.send(card);
     })
     .catch((err) => {
+      let prettyErr;
       if (err.name === 'ValidationError') {
-        res.status(BAD_REQUEST_ERROR).send({ message: 'Переданы некорректные данные при создании карточки' });
-      } else {
-        res.status(UNEXPECTED_ERROR).send({ message: err.message });
+        prettyErr = new BadRequestError('Переданы некорректные данные при создании карточки');
       }
+      next(prettyErr);
     });
 };
 
-module.exports.deleteCard = (req, res) => {
+module.exports.deleteCard = (req, res, next) => {
   const { _id } = req.params;
   Card.findById(_id)
     .then((card) => {
       if (card === null) {
-        res.status(NOT_FOUND_ERROR).send({ message: 'Карточка c указанным id не найдена' });
+        throw new NotFoundError('Карточка c указанным id не найдена');
       } else if (!card.owner.equals(req.user._id)) {
-        res.status(FOBIDDEN_ERROR).send({ message: 'Попытка удалить чужую карточку' });
+        throw new ForbiddenError('Попытка удалить чужую карточку');
       }
       return card;
     })
     .then((card) => card.delete())
     .then((data) => res.send(data))
     .catch((err) => {
+      let prettyErr;
       if (err.name === 'CastError') {
-        res.status(BAD_REQUEST_ERROR).send({ message: 'Передан некорректный формат id' });
-      } else {
-        res.status(UNEXPECTED_ERROR).send({ message: err.message });
+        prettyErr = new BadRequestError('Передан некорректный формат id');
       }
+      next(prettyErr);
     });
 };
 
-module.exports.likeCard = (req, res) => {
+module.exports.likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params._id,
     { $addToSet: { likes: req.user._id } },
@@ -62,23 +62,23 @@ module.exports.likeCard = (req, res) => {
   )
     .then((card) => {
       if (card === null) {
-        res.status(NOT_FOUND_ERROR).send({ message: 'Передан несуществующий id карточки' });
+        throw new NotFoundError('Передан несуществующий id карточки');
       } else {
         res.send(card);
       }
     })
     .catch((err) => {
+      let prettyErr;
       if (err.name === 'CastError') {
-        res.status(BAD_REQUEST_ERROR).send({ message: 'Передан некорректный формат id' });
+        prettyErr = new BadRequestError('Передан некорректный формат id');
       } else if (err.name === 'ValidationError') {
-        res.status(BAD_REQUEST_ERROR).send({ message: 'Переданы некорректные данные для постановки лайка' });
-      } else {
-        res.status(UNEXPECTED_ERROR).send({ message: err.message });
+        prettyErr = new BadRequestError('Переданы некорректные данные для постановки лайка');
       }
+      next(prettyErr);
     });
 };
 
-module.exports.dislikeCard = (req, res) => {
+module.exports.dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params._id,
     { $pull: { likes: req.user._id } },
@@ -86,18 +86,18 @@ module.exports.dislikeCard = (req, res) => {
   )
     .then((card) => {
       if (card === null) {
-        res.status(NOT_FOUND_ERROR).send({ message: 'Передан несуществующий id карточки' });
+        throw new NotFoundError('Передан несуществующий id карточки');
       } else {
         res.send(card);
       }
     })
     .catch((err) => {
+      let prettyErr;
       if (err.name === 'CastError') {
-        res.status(BAD_REQUEST_ERROR).send({ message: 'Передан некорректный формат id' });
+        prettyErr = new BadRequestError('Передан некорректный формат id');
       } else if (err.name === 'ValidationError') {
-        res.status(BAD_REQUEST_ERROR).send({ message: 'Переданы некорректные данные для снятия лайка' });
-      } else {
-        res.status(UNEXPECTED_ERROR).send({ message: err.message });
+        prettyErr = new BadRequestError('Переданы некорректные данные для снятия лайка');
       }
+      next(prettyErr);
     });
 };
