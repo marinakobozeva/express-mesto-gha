@@ -4,16 +4,13 @@ const {
   ForbiddenError,
   NotFoundError,
 } = require('../utils/errors');
-const { UNEXPECTED_ERROR } = require('../utils/constants');
 
-module.exports.getCards = (req, res) => {
+module.exports.getCards = (req, res, next) => {
   Card.find({})
     .then((cards) => {
       res.send({ data: cards });
     })
-    .catch((err) => {
-      res.status(UNEXPECTED_ERROR).send({ message: err.message });
-    });
+    .catch(next);
 };
 
 module.exports.createCard = (req, res, next) => {

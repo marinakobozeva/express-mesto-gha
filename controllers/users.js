@@ -5,16 +5,14 @@ const {
   BadRequestError,
   NotFoundError,
 } = require('../utils/errors');
-const { SECRET_KEY, UNEXPECTED_ERROR } = require('../utils/constants');
+const { SECRET_KEY } = require('../utils/constants');
 
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res, next) => {
   User.find({})
     .then((users) => {
       res.send({ data: users });
     })
-    .catch((err) => {
-      res.status(UNEXPECTED_ERROR).send({ message: err.message });
-    });
+    .catch(next);
 };
 
 module.exports.createUser = (req, res, next) => {
@@ -104,7 +102,7 @@ module.exports.updateAvatar = (req, res, next) => {
     });
 };
 
-module.exports.login = (req, res) => {
+module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
   User.findUserByCredentials({ email, password })
     .then((user) => {
@@ -115,9 +113,7 @@ module.exports.login = (req, res) => {
       );
       res.send({ token });
     })
-    .catch((err) => {
-      res.status(UNEXPECTED_ERROR).send({ message: err.message });
-    });
+    .catch(next);
 };
 
 module.exports.getUserInfo = (req, res, next) => {
