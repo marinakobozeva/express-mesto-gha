@@ -21,7 +21,7 @@ module.exports.createCard = (req, res, next) => {
       res.send(card);
     })
     .catch((err) => {
-      let prettyErr;
+      let prettyErr = err;
       if (err.name === 'ValidationError') {
         prettyErr = new BadRequestError('Переданы некорректные данные при создании карточки');
       }
@@ -31,6 +31,7 @@ module.exports.createCard = (req, res, next) => {
 
 module.exports.deleteCard = (req, res, next) => {
   const { _id } = req.params;
+  console.log(_id);
   Card.findById(_id)
     .then((card) => {
       if (card === null) {
@@ -43,7 +44,7 @@ module.exports.deleteCard = (req, res, next) => {
     .then((card) => card.delete())
     .then((data) => res.send(data))
     .catch((err) => {
-      let prettyErr;
+      let prettyErr = err;
       if (err.name === 'CastError') {
         prettyErr = new BadRequestError('Передан некорректный формат id');
       }
@@ -65,7 +66,7 @@ module.exports.likeCard = (req, res, next) => {
       }
     })
     .catch((err) => {
-      let prettyErr;
+      let prettyErr = err;
       if (err.name === 'CastError') {
         prettyErr = new BadRequestError('Передан некорректный формат id');
       } else if (err.name === 'ValidationError') {
@@ -89,7 +90,7 @@ module.exports.dislikeCard = (req, res, next) => {
       }
     })
     .catch((err) => {
-      let prettyErr;
+      let prettyErr = err;
       if (err.name === 'CastError') {
         prettyErr = new BadRequestError('Передан некорректный формат id');
       } else if (err.name === 'ValidationError') {
