@@ -1,7 +1,9 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const { errors } = require('celebrate');
 const { login, createUser } = require('./controllers/users');
+const { auth } = require('./middlewares/auth');
 
 const app = express();
 const { PORT = 3000 } = process.env;
@@ -19,21 +21,27 @@ app.listen(PORT, () => {
   // console.log(`App listening on port ${PORT}`);
 });
 
-app.use((req, res, next) => {
-  req.user = {
-    _id: '62768bd4d8f516f9b969dae3',
-  };
+app.use('/users', auth, require('./routes/users'));
+app.use('/cards', auth, require('./routes/cards'));
 
-  next();
-});
-
-app.use('/users', require('./routes/users'));
-app.use('/cards', require('./routes/cards'));
+app.post('/signin', login);
+app.post('/signup', createUser);
 
 app.use((req, res, next) => {
   res.status(404).send({ message: 'Указанный маршрут не найден' });
   next();
 });
 
-app.post('/signin', login);
-app.post('/signup', createUser);
+app.use(errors());
+
+app.use((err, req, res, next) => {
+  const { statusCode = 500, message } = err;
+
+  res
+    .status(statusCode)
+    .send({
+      message: statusCode === 500
+        ? 'На сервере произошла ошибка'
+        : message,
+    });
+});

@@ -1,18 +1,20 @@
 const jwt = require('jsonwebtoken');
-const { UNAUTHORIZED_ERROR, SECRET_KEY } = require('../utils/constants');
+const { FOBIDDEN_ERROR, SECRET_KEY } = require('../utils/constants');
 
-module.exports = (req, res, next) => {
+module.exports.auth = (req, res, next) => {
   const { authorization } = req.headers;
 
   if (!authorization || !authorization.startsWith('Bearer ')) {
-    return res.status(UNAUTHORIZED_ERROR).send({ message: 'Необходима авторизация' });
+    return res.status(FOBIDDEN_ERROR).send({ message: 'Необходима авторизация' });
   }
 
   const token = authorization.replace('Bearer ', '');
-  const payload = jwt.verify(token, SECRET_KEY);
+  let payload;
 
-  if (!payload) {
-    res.status(UNAUTHORIZED_ERROR).send({ message: 'Необохдима авторизация' });
+  try {
+    payload = jwt.verify(token, SECRET_KEY);
+  } catch (err) {
+    return res.status(FOBIDDEN_ERROR).send({ message: 'Необходима авторизация' });
   }
 
   req.user = payload;

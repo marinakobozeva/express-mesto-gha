@@ -1,5 +1,10 @@
 const Card = require('../models/card');
-const { UNEXPECTED_ERROR, NOT_FOUND_ERROR, BAD_REQUEST_ERROR } = require('../utils/constants');
+const {
+  UNEXPECTED_ERROR,
+  FOBIDDEN_ERROR,
+  NOT_FOUND_ERROR,
+  BAD_REQUEST_ERROR,
+} = require('../utils/constants');
 
 module.exports.getCards = (req, res) => {
   Card.find({})
@@ -29,14 +34,17 @@ module.exports.createCard = (req, res) => {
 
 module.exports.deleteCard = (req, res) => {
   const { _id } = req.params;
-  Card.findByIdAndDelete(_id)
+  Card.findById(_id)
     .then((card) => {
       if (card === null) {
         res.status(NOT_FOUND_ERROR).send({ message: 'Карточка c указанным id не найдена' });
-      } else {
-        res.send(card);
+      } else if (!card.owner.equals(req.user._id)) {
+        res.status(FOBIDDEN_ERROR).send({ message: 'Попытка удалить чужую карточку' });
       }
+      return card;
     })
+    .then((card) => card.delete())
+    .then((data) => res.send(data))
     .catch((err) => {
       if (err.name === 'CastError') {
         res.status(BAD_REQUEST_ERROR).send({ message: 'Передан некорректный формат id' });

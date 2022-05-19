@@ -2,6 +2,10 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const {
+  BadRequestError,
+  NotFoundError,
+} = require('../utils/errors');
+const {
   UNEXPECTED_ERROR,
   UNAUTHORIZED_ERROR,
   NOT_FOUND_ERROR,
@@ -19,7 +23,7 @@ module.exports.getUsers = (req, res) => {
     });
 };
 
-module.exports.createUser = (req, res) => {
+module.exports.createUser = (req, res, next) => {
   const {
     name,
     about,
@@ -28,43 +32,41 @@ module.exports.createUser = (req, res) => {
     password,
   } = req.body;
   bcrypt.hash(password, 10)
-    .then((hash) => {
-      User.create({
-        name,
-        about,
-        avatar,
-        email,
-        password: hash,
-      });
-    })
+    .then((hash) => User.create({
+      name,
+      about,
+      avatar,
+      email,
+      password: hash,
+    }))
     .then((user) => {
       res.send(user);
     })
     .catch((err) => {
+      let prettyErr = err;
       if (err.name === 'ValidationError') {
-        res.status(BAD_REQUEST_ERROR).send({ message: 'Переданы некорректные данные при создании пользователя' });
-      } else {
-        res.status(UNEXPECTED_ERROR).send({ message: err.message });
+        prettyErr = new BadRequestError('Переданы некорректные данные при создании пользователя');
       }
+      next(prettyErr);
     });
 };
 
-module.exports.getUser = (req, res) => {
+module.exports.getUser = (req, res, next) => {
   const { userId } = req.params;
   User.findById(userId)
     .then((user) => {
       if (user === null) {
-        res.status(NOT_FOUND_ERROR).send({ message: `Пользователь по указанному _id (${userId}) не найден` });
+        throw new NotFoundError(`Пользователь по указанному _id (${userId}) не найден`);
       } else {
         res.send(user);
       }
     })
     .catch((err) => {
+      let prettyErr = err;
       if (err.name === 'CastError') {
-        res.status(BAD_REQUEST_ERROR).send({ message: 'Передан некорректный формат id' });
-      } else {
-        res.status(UNEXPECTED_ERROR).send({ message: err.message });
+        prettyErr = new BadRequestError('Передан некорректный формат id');
       }
+      next(prettyErr);
     });
 };
 
@@ -110,19 +112,10 @@ module.exports.updateAvatar = (req, res) => {
 
 module.exports.login = (req, res) => {
   const { email, password } = req.body;
-  User.findOne({ email })
+  User.findUserByCredentials({ email, password })
     .then((user) => {
-      if (!user) {
-        res.status(UNAUTHORIZED_ERROR).send({ message: 'Передан неверный логин или пароль' });
-      }
-      return bcrypt.compare(password, user.password);
-    })
-    .then((matched) => {
-      if (!matched) {
-        res.status(UNAUTHORIZED_ERROR).send({ message: 'Передан неверный логин или пароль' });
-      }
       const token = jwt.sign(
-        { _id: User._id },
+        { _id: user._id },
         SECRET_KEY,
         { expiresIn: '7d' },
       );
@@ -130,5 +123,25 @@ module.exports.login = (req, res) => {
     })
     .catch((err) => {
       res.status(UNAUTHORIZED_ERROR).send({ message: err.message });
+    });
+};
+
+module.exports.getUserInfo = (req, res) => {
+  const { _id } = req.user;
+  console.log(_id);
+  User.findById(_id)
+    .then((user) => {
+      if (user === null) {
+        res.status(NOT_FOUND_ERROR).send({ message: `Пользователь по указанному _id (${_id}) не найден` });
+      } else {
+        res.send(user);
+      }
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        res.status(BAD_REQUEST_ERROR).send({ message: 'Передан некорректный формат id' });
+      } else {
+        res.status(UNEXPECTED_ERROR).send({ message: err.message });
+      }
     });
 };
