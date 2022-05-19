@@ -31,7 +31,6 @@ module.exports.createCard = (req, res, next) => {
 
 module.exports.deleteCard = (req, res, next) => {
   const { _id } = req.params;
-  console.log(_id);
   Card.findById(_id)
     .then((card) => {
       if (card === null) {
