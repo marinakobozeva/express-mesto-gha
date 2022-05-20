@@ -6,6 +6,7 @@ const { errors } = require('celebrate');
 const { login, createUser } = require('./controllers/users');
 const { auth } = require('./middlewares/auth');
 const NotFoundError = require('./errors/NotFoundError');
+const { requestLogger, errorLogger } = require('./middlewares/logger');
 
 const app = express();
 const { PORT = 3000 } = process.env;
@@ -15,6 +16,8 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
   // useCreateIndex: true,
   // useFindAndModify: false,
 });
+
+app.use(requestLogger);
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -45,6 +48,8 @@ app.post('/signup', celebrate({
 app.use(auth, (req, res, next) => {
   next(new NotFoundError('Указанный маршрут не найден'));
 });
+
+app.use(errorLogger);
 
 app.use(errors());
 
