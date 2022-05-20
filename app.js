@@ -5,7 +5,7 @@ const bodyParser = require('body-parser');
 const { errors } = require('celebrate');
 const { login, createUser } = require('./controllers/users');
 const { auth } = require('./middlewares/auth');
-const { NotFoundError } = require('./errors/NotFoundError');
+const NotFoundError = require('./errors/NotFoundError');
 
 const app = express();
 const { PORT = 3000 } = process.env;
