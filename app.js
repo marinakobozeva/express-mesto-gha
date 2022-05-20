@@ -5,6 +5,7 @@ const bodyParser = require('body-parser');
 const { errors } = require('celebrate');
 const { login, createUser } = require('./controllers/users');
 const { auth } = require('./middlewares/auth');
+const { NotFoundError } = require('./utils/errors');
 
 const app = express();
 const { PORT = 3000 } = process.env;
@@ -28,7 +29,7 @@ app.use('/cards', auth, require('./routes/cards'));
 app.post('/signin', celebrate({
   body: Joi.object().keys({
     email: Joi.string().min(3).required().email(),
-    password: Joi.string().min(8).required(),
+    password: Joi.string().required(),
   }),
 }), login);
 app.post('/signup', celebrate({
@@ -37,13 +38,12 @@ app.post('/signup', celebrate({
     about: Joi.string().min(2).max(30),
     avatar: Joi.string().pattern(/(http(s)?:\/\/)?(www\.)?[A-Za-zА-Яа-я0-9-]*\.[A-Za-zА-Яа-я0-9-]{2,8}(\/?[\wа-яА-Я#!:.?+=&%@!_~[\]$'*+,;=()-]*)*/),
     email: Joi.string().min(3).required().email(),
-    password: Joi.string().min(8).required(),
+    password: Joi.string().required(),
   }),
 }), createUser);
 
-app.use((req, res, next) => {
-  res.status(404).send({ message: 'Указанный маршрут не найден' });
-  next();
+app.use(auth, (req, res, next) => {
+  next(new NotFoundError('Указанный маршрут не найден'));
 });
 
 app.use(errors());
